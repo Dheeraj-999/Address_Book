@@ -2,40 +2,77 @@
 package com.adressbook.service;
 
 import com.adressbook.dto.ContactDTO;
+import com.adressbook.model.AddressBook;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class ContactService {
 
-    private final List<ContactDTO> contacts = new ArrayList<>();
+    private final AddressBookService addressBookService;
+
     private Integer nextId = 1;
 
-    // Get all contacts
-    public List<ContactDTO> getAllContacts() {
-        return contacts;
+    public ContactService(AddressBookService addressBookService) {
+        this.addressBookService = addressBookService;
     }
 
-    // Get contact by ID
-    public ContactDTO getContactById(Integer id) {
+    public List<ContactDTO> getAllContacts(String addressBookName) {
+
+        AddressBook addressBook =
+                addressBookService.getAddressBook(addressBookName);
+
+        if (addressBook == null) {
+            return null;
+        }
+
+        return addressBook.getContacts();
+    }
+
+    public ContactDTO getContactById(String addressBookName, Integer id) {
+
+        List<ContactDTO> contacts = getAllContacts(addressBookName);
+
+        if (contacts == null) {
+            return null;
+        }
+
         return contacts.stream()
                 .filter(contact -> contact.getId().equals(id))
                 .findFirst()
                 .orElse(null);
     }
 
-    // Add contact
-    public ContactDTO addContact(ContactDTO dto) {
+    public ContactDTO addContact(String addressBookName, ContactDTO dto) {
+
+        AddressBook addressBook =
+                addressBookService.getAddressBook(addressBookName);
+
+        if (addressBook == null) {
+            return null;
+        }
+
+        // Check for duplicate contact name
+        boolean duplicateExists = addressBook.getContacts()
+                .stream()
+                .anyMatch(contact ->
+                        contact.getName().equalsIgnoreCase(dto.getName()));
+
+        if (duplicateExists) {
+            return null;
+        }
+
         dto.setId(nextId++);
-        contacts.add(dto);
+        addressBook.getContacts().add(dto);
+
         return dto;
     }
 
-    // Update contact
-    public ContactDTO updateContact(Integer id, ContactDTO dto) {
-        ContactDTO existing = getContactById(id);
+    public ContactDTO updateContact(String addressBookName, Integer id,
+                                    ContactDTO dto) {
+
+        ContactDTO existing = getContactById(addressBookName, id);
 
         if (existing == null) {
             return null;
@@ -49,15 +86,21 @@ public class ContactService {
         return existing;
     }
 
-    // Delete contact
-    public boolean deleteContact(Integer id) {
-        ContactDTO contact = getContactById(id);
+    public boolean deleteContact(String addressBookName, Integer id) {
+
+        AddressBook addressBook =
+                addressBookService.getAddressBook(addressBookName);
+
+        if (addressBook == null) {
+            return false;
+        }
+
+        ContactDTO contact = getContactById(addressBookName, id);
 
         if (contact == null) {
             return false;
         }
 
-        contacts.remove(contact);
-        return true;
+        return addressBook.getContacts().remove(contact);
     }
 }

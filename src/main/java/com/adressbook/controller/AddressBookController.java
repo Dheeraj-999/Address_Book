@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/contacts")
+@RequestMapping("/api/addressbooks/{addressBookName}/contacts")
 public class AddressBookController {
 
     private final ContactService contactService;
@@ -19,16 +19,27 @@ public class AddressBookController {
         this.contactService = contactService;
     }
 
-    // Get all contacts
     @GetMapping
-    public ResponseEntity<List<ContactDTO>> getAllContacts() {
-        return ResponseEntity.ok(contactService.getAllContacts());
+    public ResponseEntity<?> getAllContacts(
+            @PathVariable String addressBookName) {
+
+        List<ContactDTO> contacts =
+                contactService.getAllContacts(addressBookName);
+
+        if (contacts == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(contacts);
     }
 
-    // Get contact by ID
     @GetMapping("/{id}")
-    public ResponseEntity<ContactDTO> getContactById(@PathVariable Integer id) {
-        ContactDTO contact = contactService.getContactById(id);
+    public ResponseEntity<?> getContactById(
+            @PathVariable String addressBookName,
+            @PathVariable Integer id) {
+
+        ContactDTO contact =
+                contactService.getContactById(addressBookName, id);
 
         if (contact == null) {
             return ResponseEntity.notFound().build();
@@ -37,33 +48,60 @@ public class AddressBookController {
         return ResponseEntity.ok(contact);
     }
 
-    // Add contact
-    @PostMapping
-    public ResponseEntity<ContactDTO> addContact(@RequestBody ContactDTO dto) {
-        ContactDTO savedContact = contactService.addContact(dto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedContact);
+    @PostMapping
+    public ResponseEntity<?> addContact(
+            @PathVariable String addressBookName,
+            @RequestBody ContactDTO dto) {
+
+        // Check whether Address Book exists
+        List<ContactDTO> contacts =
+                contactService.getAllContacts(addressBookName);
+
+        if (contacts == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Check duplicate contact name
+        boolean duplicateExists = contacts.stream()
+                .anyMatch(contact ->
+                        contact.getName().equalsIgnoreCase(dto.getName()));
+
+        if (duplicateExists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Contact already exists in this Address Book");
+        }
+
+        ContactDTO contact =
+                contactService.addContact(addressBookName, dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(contact);
     }
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<ContactDTO> updateContact(
+    public ResponseEntity<?> updateContact(
+            @PathVariable String addressBookName,
             @PathVariable Integer id,
             @RequestBody ContactDTO dto) {
 
-        ContactDTO updated = contactService.updateContact(id, dto);
+        ContactDTO contact =
+                contactService.updateContact(addressBookName, id, dto);
 
-        if (updated == null) {
+        if (contact == null) {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(contact);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteContact(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteContact(
+            @PathVariable String addressBookName,
+            @PathVariable Integer id) {
 
-        boolean deleted = contactService.deleteContact(id);
+        boolean deleted =
+                contactService.deleteContact(addressBookName, id);
 
         if (!deleted) {
             return ResponseEntity.notFound().build();
@@ -71,5 +109,4 @@ public class AddressBookController {
 
         return ResponseEntity.noContent().build();
     }
-
 }
