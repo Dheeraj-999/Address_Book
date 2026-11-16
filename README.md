@@ -1,27 +1,28 @@
 # Address_Book
-## UC5 – Multiple Address Books
+## UC6 – Prevent Duplicate Contacts
 
 ### What I Did
-- Created support for multiple Address Books.
-- Each Address Book has a unique name.
-- Used a Map to store Address Books with their names as keys.
-- Added REST APIs to create and retrieve Address Books.
-- Updated contact management to store contacts separately in each Address Book.
-- Tested the APIs using Postman.
+- Implemented duplicate contact validation.
+- Prevented adding the same person more than once in an Address Book.
+- Added case-insensitive name checking.
+- Allowed the same person to be added to different Address Books.
+- Used Java Stream API and `anyMatch()` to check duplicate contacts.
+- Returned HTTP 409 Conflict when a duplicate contact is added.
 
 ### What I Learned
-- Working with Java Map collections.
-- Managing multiple objects using a unique key.
-- Connecting Spring Boot controllers with service classes.
-- Handling REST API requests and responses.
+- Working with Java Streams.
+- Using `anyMatch()` for searching collections.
+- Implementing duplicate validation.
+- Handling HTTP status codes in Spring Boot.
 
 ### Issues Faced
-- Address Books were cleared whenever the application restarted because data was stored in memory.
-- Fixed the issue during testing by recreating the Address Books after restarting the application.
+- Address Books were cleared after restarting the application because data is stored in memory.
+- Recreated Address Books for testing.
 
 ### Technologies Used
 - Java 21
 - Spring Boot
 - REST API
+- Java Collections
 - Maven
 - Postman
